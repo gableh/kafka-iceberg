@@ -1,0 +1,35 @@
+
+*****************************************************
+Summary
+-------
+Generated at: 2024-03-31T18:45:22+08:00
+
+Notes: 0
+Binaries: 0
+Archives: 0
+Standards: 9
+
+Apache Licensed: 9
+Generated Documents: 0
+
+JavaDocs are generated, thus a license header is optional.
+Generated files do not require license headers.
+
+0 Unknown Licenses
+
+*****************************************************
+  Files with Apache License headers will be marked AL
+  Binary files (which do not require any license headers) will be marked B
+  Compressed archives will be marked A
+  Notices, licenses etc. will be marked N
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/pom.xml
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/Dockerfile
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/Producer.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/model/Transaction.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/model/TransactionSerializer.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/model/TransactionSupplier.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/DataGenerator.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/src/main/java/org/apache/flink/playground/datagen/Throttler.java
+  AL    /home/gableh/code/icebergpoc/examples/kafka-iceberg/docker/data-generator/docker-entrypoint.sh
+ 
+*****************************************************
