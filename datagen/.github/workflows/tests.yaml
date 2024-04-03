@@ -1,0 +1,27 @@
+name: Datagen Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      # Install dependencies
+      - run: npm install
+
+      # Build
+      - run: npm run build
+
+      # Run tests
+      - run: npm test

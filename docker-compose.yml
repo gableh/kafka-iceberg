@@ -8,14 +8,17 @@ services:
     ports:
       - "8081:8081"
     command: jobmanager
+    restart: always
     environment:
     - |
       FLINK_PROPERTIES=
+      jobmanager.memory.process.size: 2g
       jobmanager.rpc.address: jobmanager
       rest.flamegraph.enabled: true
   taskmanager:
     build: ./flink
     hostname: taskmanager
+    restart: always
     depends_on:
       - jobmanager
     command: taskmanager
@@ -25,7 +28,15 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
+        # Total Process Memory size (adjust as needed)
+        taskmanager.memory.process.size: 4g
+        # Total Flink Memory size (adjust as needed)
+        taskmanager.memory.flink.size: 3500m
+        # JVM Metaspace size (adjust as needed)
+        taskmanager.memory.jvm-metaspace.size: 256m
         taskmanager.numberOfTaskSlots: 4
+        state.backend: filesystem
+        state.checkpoints.dir: file:///tmp/
 
           # flink:
           #container_name: flink
@@ -39,6 +50,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.1
     container_name: zookeeper
+    restart: always
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -46,19 +58,26 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.1
     container_name: broker
+    restart: always
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: DOCKER://broker:29092, LOCALHOST://localhost:9092
-      KAFKA_ADVERTISED_LISTENERS: DOCKER://broker:29092, LOCALHOST://localhost:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,LOCALHOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://broker:29092, LOCALHOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092, LOCALHOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,LOCALHOST:PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - 9092:9092
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker:29092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
     
   minio:
     image: minio/minio
@@ -70,7 +89,10 @@ services:
       - 9001:9001
       - 9000:9000
     command: ["server", "/data", "--console-address", ":9001"]
-
+    networks:
+      default:
+        aliases:
+          - warehouse.minio
   mc:
     depends_on:
       - minio
@@ -86,35 +108,48 @@ services:
 
   hive-metastore:
     container_name: hms
+    restart: always
     build: ./hms-standalone-s3
     ports:
       - "9083:9083"
     environment:
       - HMS_LOGLEVEL=INFO
 
-  starrocks:
-    image: starrocks/allin1-ubuntu
-    ports:
-      - "9030:9030"
-      - "8030:8030"
-      - "8040:8040"
-    container_name: starrocks
-
   kcat:
     image: edenhill/kcat:1.7.1
     container_name: kcat
     restart: "no"
     entrypoint: tail -f /dev/null
-    
-  data-generator:
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:5.1.2
+    restart: always
+    container_name: schemaregistry
+    depends_on:
+      - zookeeper
     environment:
-      - DATAGEN_KAFKA=broker:29092
-      - DATAGEN_THROTTLE=-1
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:2181"
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8085"
+    ports:
+      - 8085:8085
+    healthcheck:
+      test: ["CMD", "curl", "--output", "/dev/null", "--silent", "--head", "--fail", "http://schemaregistry:8085/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+  data-generator:
+    restart: always
+    environment:
+      - KAFKA_BROKERS=broker:29092
+      - SCHEMA_REGISTRY_URL=http://schemaregistry:8085
     container_name: data-generator
-    image: apache/data-generator:1
-    build: ./docker/data-generator
+    image: materialize/datagen
+    entrypoint: datagen -s tests/products.sql -f avro -n -1 >/dev/null
     depends_on:
       - kafka
+      - schemaregistry
+      - hive-metastore
 
 
 # Without a network explicitly defined, you hit this Hive/Thrift error

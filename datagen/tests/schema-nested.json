@@ -1,0 +1,29 @@
+{
+    "_meta": {
+        "topic": "mz_datagen_users"
+    },
+    "id": "faker.datatype.uuid()",
+    "name": "faker.internet.userName()",
+    "email": "faker.internet.exampleEmail()",
+    "phone": "faker.phone.imei()",
+    "website": "faker.internet.domainName()",
+    "city": "faker.address.city()",
+    "company": "faker.company.name()",
+    "age": "faker.datatype.number()",
+    "created_at": "faker.datatype.datetime()",
+    "posts": [
+        {
+            "id": "faker.datatype.uuid()",
+            "title": "faker.lorem.sentence()",
+            "body": "faker.lorem.paragraph()",
+            "comments": [
+                {
+                    "id": "faker.datatype.uuid()",
+                    "name": "faker.internet.userName()",
+                    "email": "faker.internet.exampleEmail()",
+                    "body": "faker.lorem.paragraph()"
+                }
+            ]
+        }
+    ]
+}

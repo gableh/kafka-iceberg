@@ -46,7 +46,7 @@ public class Producer implements Runnable, AutoCloseable {
 
   @Override
   public void run() {
-    KafkaProducer<Long, Transaction> producer = new KafkaProducer<>(getProperties());
+    KafkaProducer<Long, byte[]> producer = new KafkaProducer<>(getProperties());
     int maxRecordsPerSecond = Integer.parseInt(Optional.ofNullable(System.getenv("DATAGEN_THROTTLE")).orElse("100"));
     Throttler throttler = new Throttler(maxRecordsPerSecond);
 
@@ -56,10 +56,13 @@ public class Producer implements Runnable, AutoCloseable {
 
       Transaction transaction = transactions.get();
 
-      long millis = transaction.timestamp.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+      long millis = transaction.getTimestamp().toInstant(ZoneOffset.UTC).toEpochMilli();
 
-      ProducerRecord<Long, Transaction> record =
-          new ProducerRecord<>(topic, null, millis, transaction.accountId, transaction);
+
+      ProducerRecord<Long, byte[]> record =
+          new ProducerRecord<>(topic, null, millis, serializeTransaction(transaction));
+
+          
       producer.send(record);
 
       try {
@@ -76,7 +79,10 @@ public class Producer implements Runnable, AutoCloseable {
   public void close() {
     isRunning = false;
   }
-
+  private byte[] serializeTransaction(Transaction transaction) {
+    // Serialize the transaction into JSON using the schema
+    return new TransactionSerializer().serialize(transaction);
+  }
   private Properties getProperties() {
     final Properties props = new Properties();
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);

@@ -1,34 +1,68 @@
 CREATE TABLE transactions (
-    accountId BIGINT,
-    amount INT,
-    ts TIMESTAMP
+  id int not null,
+  name varchar,
+  merchant_id int,
+  price int ,
+  status int ,
+  PRIMARY KEY(`id`) NOT ENFORCED
 ) WITH (
-    'connector' = 'kafka',
-    'topic' = 'transactions',
+    'connector' = 'upsert-kafka',
+    'topic' = 'ecommerce.products',
     'properties.bootstrap.servers' = 'broker:29092',
-    'scan.startup.mode' = 'earliest-offset',
-    'format' = 'csv',
-    'sink.parallelism' = '20'
+    'value.format' = 'avro-confluent',
+    'key.format' = 'raw',
+    'sink.parallelism' = '1',
+    'value.avro-confluent.url' = 'http://schemaregistry:8085'
 );
 
 SET 'execution.runtime-mode' = 'streaming';
 
 SELECT * FROM transactions LIMIT 10;
-SET 'execution.checkpointing.interval' = '10sec';
+SET 'execution.checkpointing.interval' = '60sec';
 SET 'pipeline.operator-chaining.enabled' = 'false';
 
-CREATE TABLE i_transactions WITH (
+CREATE TABLE i_transactions  (
+  id int not null,
+  name varchar,
+  merchant_id int,
+  price int ,
+  status int ,
+  PRIMARY KEY(`id`) NOT ENFORCED
+) WITH (
   'connector' = 'iceberg',
   'catalog-type'='hive',
   'catalog-name'='dev',
   'warehouse' = 's3a://warehouse',
-  'sink.parallelism' = '20',
-  'hive-conf-dir' = './conf') 
-  as select * from transactions
+  'sink.parallelism' = '1',
+  'format-version'='2', 'write.upsert.enabled'='true',
+  'write.metadata.delete-after-commit.enabled'='true',
+  'write.metadata.previous-versions-max'='2',
+  'write.format.default' = 'orc',
+  'hive-conf-dir' = './conf');
 
-insert into i_transactions /*+ OPTIONS('target-file-size-bytes'='512', 'write-parallelism'=4) */
+CREATE TABLE i_transactions_orc  (
+  id int not null,
+  name varchar,
+  merchant_id int,
+  price int ,
+  status int ,
+  PRIMARY KEY(`id`) NOT ENFORCED
+) WITH (
+  'connector' = 'iceberg',
+  'catalog-type'='hive',
+  'catalog-name'='dev',
+  'warehouse' = 's3a://warehouse',
+  'sink.parallelism' = '1',
+  'format-version'='2', 'write.upsert.enabled'='true',
+  'write.metadata.delete-after-commit.enabled'='true',
+  'write.metadata.previous-versions-max'='2',
+  'hive-conf-dir' = './conf');
+
+insert into i_transactions /*+ OPTIONS('write-parallelism'='4') */
 select * from transactions
 
+insert into i_transactions_orc /*+ OPTIONS('write-parallelism'='4') */
+select * from transactions
 
 CREATE EXTERNAL CATALOG 'iceberg'
 PROPERTIES
@@ -36,7 +70,7 @@ PROPERTIES
   "type"="iceberg",
   "iceberg.catalog.type"="hive",
   "hive.metastore.uris" = "thrift://hms:9083",
-  "iceberg.catalog.warehouse"="warehouse",
+  "enable_iceberg_metadata_cache"="true",
   "aws.s3.access_key"="admin",
   "aws.s3.secret_key"="password",
   "aws.s3.endpoint"="http://minio:9000",
@@ -51,3 +85,22 @@ hive.s3.aws-access-key=admin
 hive.s3.aws-secret-key=password
 hive.s3.endpoint=http://minio:9000
 hive.s3.path-style-access=true
+
+
+ CREATE TABLE `iceberg`.`iceberg_ci_db`.`iceberg_v2_parquet_unpartitioned_table` (
+  `k1` INT NOT NULL,
+  `k2` VARCHAR(2147483647),
+  PRIMARY KEY (`k1`) NOT ENFORCED
+) WITH (
+  'write-format' = 'parquet',
+  'write.upsert.enabled' = 'true'
+)
+
+CREATE TABLE `iceberg`.`i_db`.`i_table` (
+  `k1` INT NOT NULL,
+  `k2` VARCHAR(1048576),
+  `k3` VARCHAR(1048576) NOT NULL) PARTITION BY (`k3`)
+PROPERTIES (
+  'write-format' = 'parquet',
+  'write.upsert.enabled' = 'true'
+)

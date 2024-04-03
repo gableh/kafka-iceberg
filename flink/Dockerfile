@@ -66,5 +66,17 @@ RUN echo "-> Install JARs: Hadoop" && \
     curl https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-mapreduce-client-core/3.3.4/hadoop-mapreduce-client-core-3.3.4.jar -O  && \
     popd
 
+RUN echo "-> Install JARs: Avro Deserialization Format Factory" && \
+    mkdir -p ./lib/flink && pushd $_ && \
+    curl https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.18.1/flink-avro-1.18.1.jar -O && \
+    curl https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.18.1/flink-avro-confluent-registry-1.18.1.jar -O && \
+    curl https://repo1.maven.org/maven2/org/apache/avro/avro/1.11.3/avro-1.11.3.jar -O && \
+    curl https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.17.0/jackson-databind-2.17.0.jar -O && \
+    curl https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.17.0/jackson-core-2.17.0.jar -O && \
+    curl https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.17.0/jackson-annotations-2.17.0.jar -O && \
+    curl https://packages.confluent.io/maven/io/confluent/kafka-schema-registry-client/7.6.0/kafka-schema-registry-client-7.6.0.jar -O && \
+    curl https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.7.0/kafka-clients-3.7.0.jar -O && \
+    curl https://repo1.maven.org/maven2/com/google/guava/guava/33.1.0-jre/guava-33.1.0-jre.jar -O && \
+    popd
 # Set the launch command
 CMD ./bin/start-cluster.sh && sleep infinity
