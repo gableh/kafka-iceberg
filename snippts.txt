@@ -37,7 +37,6 @@ CREATE TABLE i_transactions  (
   'format-version'='2', 'write.upsert.enabled'='true',
   'write.metadata.delete-after-commit.enabled'='true',
   'write.metadata.previous-versions-max'='2',
-  'write.format.default' = 'orc',
   'hive-conf-dir' = './conf');
 
 CREATE TABLE i_transactions_orc  (
@@ -56,6 +55,7 @@ CREATE TABLE i_transactions_orc  (
   'format-version'='2', 'write.upsert.enabled'='true',
   'write.metadata.delete-after-commit.enabled'='true',
   'write.metadata.previous-versions-max'='2',
+  'write.format.default' = 'orc',
   'hive-conf-dir' = './conf');
 
 insert into i_transactions /*+ OPTIONS('write-parallelism'='4') */
