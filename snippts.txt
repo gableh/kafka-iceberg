@@ -36,6 +36,9 @@ CREATE TABLE i_transactions  (
   'sink.parallelism' = '1',
   'format-version'='2', 'write.upsert.enabled'='true',
   'write.metadata.delete-after-commit.enabled'='true',
+  'write.delete.mode'='merge-on-read',
+  'write.update.mode'='merge-on-read',
+  'write.merge.mode'='merge-on-read',
   'write.metadata.previous-versions-max'='2',
   'hive-conf-dir' = './conf');
 
@@ -58,10 +61,10 @@ CREATE TABLE i_transactions_orc  (
   'write.format.default' = 'orc',
   'hive-conf-dir' = './conf');
 
-insert into i_transactions /*+ OPTIONS('write-parallelism'='4') */
+insert into i_transactions /*+ OPTIONS('write-parallelism'='4', 'upsert-enabled'='true') */
 select * from transactions
 
-insert into i_transactions_orc /*+ OPTIONS('write-parallelism'='4') */
+insert into i_transactions_orc /*+ OPTIONS('write-parallelism'='4', ) */
 select * from transactions
 
 CREATE EXTERNAL CATALOG 'iceberg'
